@@ -1,7 +1,7 @@
 version: '3'
 services:
   webapp:
-    image: 424838115375.dkr.ecr.us-west-2.amazonaws.com/realne-auth/webapp
+    image: 851347696412.dkr.ecr.ap-northeast-1.amazonaws.com/laravel-cpl5/webapp
     build:
       context: .
       dockerfile: Dockerfile.webapp
@@ -14,7 +14,7 @@ services:
       - ./.env.docker:/webapp/.env
 
   nginx:
-    image: 424838115375.dkr.ecr.us-west-2.amazonaws.com/realne-auth/nginx
+    image: 851347696412.dkr.ecr.ap-northeast-1.amazonaws.com/laravel-cpl5/nginx
     build:
       context: .
       dockerfile: Dockerfile.nginx
