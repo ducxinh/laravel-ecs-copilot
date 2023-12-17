@@ -1,0 +1,28 @@
+#!/bin/bash
+
+function usage()
+{
+    echo Usage: copilot-svc-deploy ENVIRONMENT
+    exit 1
+}
+
+env=$1
+
+if [[ -z $env ]]; then
+    usage
+fi
+
+echo "AWS_PROFILE: $AWS_PROFILE"
+echo -n "Deploy to $env? [yN]: "
+read ans
+
+if [[ $ans != "y" ]]; then
+    echo "Stopped"
+    exit 1
+fi
+
+copilot svc deploy \
+    -a realne-auth \
+    -n webapp \
+    -e $env \
+    --resource-tags Product=auth,Application=auth,Environment=$env

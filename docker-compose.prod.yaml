@@ -1,0 +1,36 @@
+version: '3'
+services:
+  webapp:
+    image: 424838115375.dkr.ecr.us-west-2.amazonaws.com/realne-auth/webapp
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    working_dir: /webapp
+    entrypoint: /usr/local/bin/php-fpm.sh
+    environment:
+      - APP_ENV=production
+    volumes:
+      - webapp:/webapp
+      - ./.env.docker:/webapp/.env
+
+  nginx:
+    image: 424838115375.dkr.ecr.us-west-2.amazonaws.com/realne-auth/nginx
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    working_dir: /webapp
+    volumes:
+      - webapp:/webapp
+      - ./containers/nginx/webapp.conf.docker:/etc/nginx/conf.d/webapp.conf
+    ports:
+      - 8380:8080
+    depends_on:
+      - webapp
+
+volumes:
+  webapp:
+    driver_opts:
+      type: none
+      device: .
+      o: bind
+

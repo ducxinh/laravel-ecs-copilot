@@ -1,0 +1,35 @@
+Parameters:
+  App:
+    Type: String
+  Env:
+    Type: String
+  Name:
+    Type: String
+
+Resources:
+  DynamoDBAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: DynamoDBAccess
+          Effect: Allow
+          Action:
+            - dynamodb:BatchGetItem
+            - dynamodb:DescribeStream
+            - dynamodb:DescribeTable
+            - dynamodb:Get*
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchWriteItem
+            - dynamodb:DeleteItem
+            - dynamodb:UpdateItem
+            - dynamodb:PutItem
+          Resource: "*"
+
+Outputs:
+  DynamoDBACcessPolicyArn:
+    Description: "The ARN of the ManagedPolicy to attatch to the task role."
+    Value: !Ref DynamoDBAccessPolicy
+

@@ -1,0 +1,27 @@
+Parameters:
+  App:
+    Type: String
+  Env:
+    Type: String
+  Name:
+    Type: String
+
+Resources:
+  SesSendingAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: SesSendingAccess
+          Effect: Allow
+          Action:
+            - ses:SendRawEmail
+            - ses:SendEmail
+          Resource: "*"
+
+Outputs:
+  SesSendingAccessPolicyArn:
+    Description: "The ARN of the ManagedPolicy to attatch to the task role."
+    Value: !Ref SesSendingAccessPolicy
+

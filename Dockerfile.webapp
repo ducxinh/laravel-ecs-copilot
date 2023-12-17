@@ -1,0 +1,58 @@
+FROM public.ecr.aws/docker/library/composer:2.5.1 AS composer
+FROM public.ecr.aws/docker/library/node:12.20.1 AS nodejs
+FROM public.ecr.aws/docker/library/php:7.3-fpm
+
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+RUN composer config -g repos.packagist composer https://packagist.jp
+
+WORKDIR /webapp
+
+RUN apt-get update \
+    && apt-get install -y \
+        libpng-dev \
+        libzip-dev \
+    && docker-php-ext-configure gd \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_mysql \
+        gd \
+        zip \
+    && apt-get autoremove -y \
+    && apt-get clean -y
+
+COPY containers/webapp/*.sh /usr/local/bin/
+COPY containers/webapp/php.ini /usr/local/etc/php/php.ini
+
+RUN mkdir -p storage/ \
+  && mkdir -p storage/app/public \
+  && mkdir -p storage/framework \
+  && mkdir -p storage/framework/cache \
+  && mkdir -p storage/framework/sessions \
+  && mkdir -p storage/framework/testing \
+  && mkdir -p storage/framework/views \
+  && mkdir -p storage/logs \
+  && mkdir -p bootstrap/cache \
+  && chown -R www-data:www-data storage/ \
+  && chown -R root bootstrap/
+
+COPY composer* /webapp/
+RUN composer install --no-progress --no-autoloader --no-suggest --no-interaction --ignore-platform-reqs --no-ansi --no-scripts
+
+COPY ./ /webapp/
+
+# Build JavaScript and CSS with Laravel Mix
+COPY --from=nodejs /usr/local/lib/node_modules /usr/local/lib/node_modules/
+COPY --from=nodejs /usr/local/bin/node /usr/local/bin/
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && /usr/local/bin/npm install \
+    && npm run production \
+    && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/node
+
+RUN composer dump-autoload
+RUN composer run post-autoload-dump
+
+
+RUN php artisan storage:link
+
+VOLUME ["/webapp", "/webapp/vendor", "/webapp/node_modules"]

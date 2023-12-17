@@ -1,0 +1,134 @@
+# The manifest for the "app" service.
+# Read the full specification for the "Load Balanced Web Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: webapp
+type: Load Balanced Web Service
+
+# Distribute traffic to your service.
+http:
+  target_container: nginx
+  # Requests to this path will be forwarded to your service.
+  # To match all requests you can use the "/" path.
+  path: "/"
+  # You can specify a custom health check path. The default is "/".
+  healthcheck:
+    path: '/'
+    success_codes: '200,301,302,400,419,499'
+
+storage:
+  ephemeral: 100
+  volumes:
+    webapp:
+      path: /webapp
+      read_only: false
+
+# Configuration for your containers and service.
+image:
+  # Docker build arguments. For additional overrides: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#image-build
+  build: Dockerfile.webapp
+  # Port exposed through your container to route traffic to it.
+  port: 9000
+
+cpu: 256       # Number of CPU units for the task.
+memory: 512    # Amount of memory in MiB used by the task.
+count: 1       # Number of tasks that should be running in your service.
+exec: true     # Enable running commands in your container.
+
+# Optional fields for more advanced use-cases.
+#
+variables:                    # Pass environment variables as key value pairs.
+  APP_NAME: R.E.A.L.
+  APP_ENV: production
+  LOG_CHANNEL: stderr
+
+  CACHE_DRIVER: database
+  QUEUE_CONNECTION: database
+  SESSION_DRIVER: database
+
+  DB_CONNECTION: mysql
+  DB_PORT: 3306
+
+  MAIL_MAILER: ses
+  MAIL_ENCRYPTION: tls
+  AWS_DEFAULT_REGION: us-west-2
+  MAIL_FROM_NAME: 'R.E.A.L. New Energy Platform'
+
+secrets:
+  PASSPORT_PRIVATE_KEY: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/oauth-private.key
+  PASSPORT_PUBLIC_KEY: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/oauth-public.key
+
+# You can override any of the values defined above by environment.
+environments:
+  dev:
+    variables:
+      APP_KEY: base64:261p1YgNzF58rNc74p3em+oKtXh0awsbBp0saLdiFMc=
+      APP_DEBUG: false
+      APP_URL: https://auth.dev.real-newenergy.com
+      LOG_LEVEL: debug
+      DB_HOST: realne-dev-rds-app.cluster-czxjhfy41bmo.us-west-2.rds.amazonaws.com
+      DB_DATABASE: realne_auth_dev
+      DB_USERNAME: realne_auth_dev
+      DB_PASSWORD: realne_auth_dev
+      DYNAMODB_CONNECTION: aws_iam_role
+      DYNAMODB_REGION: us-west-2
+      DYNAMODB_DEBUG: true
+      MAIL_FROM_ADDRESS: noreply@realne-auth.realne-dev.tasdg.info
+      REALNE_API_KEY: realne-auth
+      REALNE_DY_SUFFIX: -znbayudexzg3zbipvi4xxuxbgu-dev
+      REALNE_ENV: dev
+  stg:
+    variables:
+      APP_KEY: base64:E0OOQS9JdshTF6RirHC3t+pvvIdHNnwCbw09a09vs7o=
+      APP_DEBUG: false
+      APP_URL: https://auth.stg.real-newenergy.com
+      LOG_LEVEL: debug
+      DB_HOST: realne-auth-stg.czcvpqbphwxe.us-west-2.rds.amazonaws.com
+      DB_DATABASE: realne_auth_stg
+      DB_USERNAME: realne_auth_stg
+      DB_PASSWORD: realne_auth_stg
+      DYNAMODB_CONNECTION: aws_iam_role
+      DYNAMODB_REGION: us-west-2
+      DYNAMODB_DEBUG: true
+      MAIL_FROM_ADDRESS: noreply@auth.stg.real-newenergy.com
+      REALNE_API_KEY: realne-auth
+      REALNE_DY_SUFFIX: -5eumkvvsnfdnrl7bj3kxlnrk3e-stg
+      REALNE_ENV: stg
+  prod:
+    variables:
+      APP_KEY: base64:U21+BAiuBjwhJ71hUTRBId20+/J9HcL1v4Gg6X/Km10=
+      APP_DEBUG: false
+      APP_URL: https://auth.real-newenergy.com
+      LOG_LEVEL: warning
+      DB_HOST: realne-prod-rds-auth.cluster-czzdf9ziommt.us-west-2.rds.amazonaws.com
+      DB_DATABASE: realne_auth_prod
+      DB_USERNAME: realne_auth_prod
+      DB_PASSWORD: realne_auth_prod
+      DYNAMODB_CONNECTION: aws_iam_role
+      DYNAMODB_REGION: us-west-2
+      DYNAMODB_DEBUG: false
+      MAIL_FROM_ADDRESS: noreply@auth.real-newenergy.com
+      REALNE_API_KEY: realne-auth
+      REALNE_DY_SUFFIX: -i5rzejdgmzdthf57rrfdq7f6yi-prod
+      REALNE_ENV: prod
+
+#  test:
+#    count: 2               # Number of tasks to run for the "test" environment.
+
+sidecars:
+  nginx:
+    port: 8080
+    # prod
+    image: ${ECR_NGINX_IMAGE}
+    # dev
+    # image: 151874643243.dkr.ecr.us-west-2.amazonaws.com/realne-auth/nginx
+    # stg
+    # image: 636319503652.dkr.ecr.us-west-2.amazonaws.com/realne-auth/nginx
+    mount_points:
+      - source_volume: webapp
+        path: /webapp
+        read_only: false
+    depends_on:
+      webapp: start
+

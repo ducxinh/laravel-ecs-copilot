@@ -1,0 +1,165 @@
+swagger: "2.0"
+info:
+  version: "0.1"
+  title: realneプラットフォーム認証基盤
+host: realne-auth.realne-dev.tasdg.info
+schemes:
+  - https
+basePath: /api
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-API-KEY
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /accounts/{accountId}:
+    parameters:
+      - name: accountId
+        in: path
+        description: 利用者ID
+        required: true
+        type: string
+
+    get:
+      summary: 利用者情報API
+      description: 指定された利用者情報を返します。
+      responses:
+        200:
+          description: 指定されたユーザの情報を返します。
+          schema:
+            $ref: "#/definitions/Account"
+        403:
+          $ref: "#/responses/Forbidden"
+        404:
+          $ref: "#/responses/NotFound"
+
+  /accounts/{accountId}/scopes:
+    get:
+      summary: 利用者権限取得
+      parameters:
+      - name: accountId
+        in: path
+        required: true
+        type: string
+        format: UUID
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/AccountScope"
+
+  /account-scope/check:
+    post:
+      summary: 権限チェックAPI
+      consumes:
+        - "application/json"
+      parameters:
+        - in: body
+          name: "account-scope"
+          schema:
+            type: object
+            properties:
+              accountId:
+                type: string
+              scopes:
+                $ref: "#/definitions/ScopeList"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/AccountScopeCheck"
+
+responses:
+  Error:
+    description: "エラーレスポンス"
+  Forbidden:
+    description: Forbidden
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+  NotFound:
+    description: NotFound
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+
+definitions:
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
+        description: エラーメッセージ
+  Account:
+    properties:
+      id:
+        type: string
+        description: "利用者ID"
+      name:
+        type: string
+        description: "利用者名"
+        example: "田中 太郎"
+      loginId:
+        type: string
+        description: "ログインID"
+        example: "ttanaka"
+      email:
+        type: string
+        description: "メールアドレス"
+        example: "t-tanaka@example.com"
+  Site:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+  Company:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+  Vendor:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+  AccountScope:
+    properties:
+      account:
+        $ref: "#/definitions/Account"
+      scopes:
+        allOf:
+          - $ref: "#/definitions/ScopeList"
+          - example:
+            - "site.full.e9a4b8a2-49f2-4de4-8f06-bb19d4cdff84.db51a068-194e-4486-8818-b383f9a4c00f.b0a14241-d96a-4b5c-af52-dae6ddb54b76"
+            - "company.read.e9a4b8a2-49f2-4de4-8f06-bb19d4cdff84.db51a068-194e-4486-8818-b383f9a4c00f"
+  AccountScopeCheck:
+    properties:
+      account:
+        $ref: "#/definitions/Account"
+      scopes:
+        type: array
+        items:
+          $ref: "#/definitions/AccountScopeCheckItem"
+  AccountScopeCheckItem:
+    properties:
+      scope:
+        type: string
+        description: スコープ名
+      allowed:
+        type: boolean
+        description: スコープの有無
+    example:
+      scope: "company.write.e9a4b8a2-49f2-4de4-8f06-bb19d4cdff84.db51a068-194e-4486-8818-b383f9a4c00f"
+      allowed: true
+  ScopeList:
+    type: array
+    items:
+      $ref: "#/definitions/ScopeListItem"
+  ScopeListItem:
+    description: "スコープ"
+    type: string
+    example: "company.write.e9a4b8a2-49f2-4de4-8f06-bb19d4cdff84.db51a068-194e-4486-8818-b383f9a4c00f"

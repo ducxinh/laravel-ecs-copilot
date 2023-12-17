@@ -1,0 +1,82 @@
+version: '3'
+services:
+  db:
+    image: mysql:5.7.12
+    volumes:
+      - ./containers/db/conf.d/:/etc/mysql/conf.d/
+        #- ./containers/db/init.d:/docker-entrypoint-initdb.d/
+      - ./:/host
+      - ./storage/docker/db:/var/lib/mysql
+      - ./storage/docker/db_logs:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: realne_auth_development
+      MYSQL_USER: realne_auth_development
+      MYSQL_PASSWORD: realne_auth_development
+    ports:
+      - 7221:3306
+
+  db_testing:
+    image: mysql:5.7.12
+    volumes:
+      - ./containers/db/conf.d/:/etc/mysql/conf.d/
+        #- ./containers/db/init.d:/docker-entrypoint-initdb.d/
+      - ./:/host
+      - ./storage/docker/db_testing:/var/lib/mysql
+      - ./storage/docker/db_testing_logs:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: realne_auth_testing
+      MYSQL_USER: realne_auth_testing
+      MYSQL_PASSWORD: realne_auth_testing
+    ports:
+      - 7222:3306
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    working_dir: /webapp
+    entrypoint: /usr/local/bin/php-fpm.sh
+    environment:
+      - APP_ENV=local
+      - PASSPORT_PUBLIC_KEY
+      - PASSPORT_PRIVATE_KEY
+    volumes:
+      - webapp:/webapp
+      - ./.env.docker:/webapp/.env
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    working_dir: /webapp
+    volumes:
+      - webapp:/webapp
+      - ./containers/nginx/webapp.conf.docker:/etc/nginx/conf.d/webapp.conf
+    ports:
+      - 8380:8080
+    depends_on:
+      - webapp
+
+  copilot:
+    build:
+      context: .
+      dockerfile: Dockerfile.copilot
+    working_dir: /webapp
+    environment:
+      - AWS_PROFILE
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_DEFAULT_REGION
+    volumes:
+      - ./:/webapp
+      - $HOME/.aws:/root/.aws
+
+volumes:
+  webapp:
+    driver_opts:
+      type: none
+      device: .
+      o: bind
+

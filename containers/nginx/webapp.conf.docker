@@ -1,0 +1,6 @@
+
+# For local Docker network
+upstream webapp {
+    server webapp:9000;
+}
+

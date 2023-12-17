@@ -1,0 +1,16 @@
+vendor/
+node_modules/
+storage/
+bootstrap/cache/
+copilot/
+
+.git/
+tags
+GTAGS
+.*
+*.md
+*.db
+_ide_helper.php
+Makefile
+Dockerfile*
+

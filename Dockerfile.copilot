@@ -1,0 +1,6 @@
+FROM amazon/aws-cli:2.9.15
+
+ADD https://github.com/aws/copilot-cli/releases/download/v1.24.0/copilot-linux /usr/local/bin/copilot
+RUN chmod 755 /usr/local/bin/copilot
+
+ENTRYPOINT ["/bin/bash"]
